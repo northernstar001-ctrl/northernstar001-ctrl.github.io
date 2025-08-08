@@ -1,143 +1,145 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Video Background</title>
-<link rel="stylesheet" href="style.css">
-<style>
-        
-            
-       body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-image: url('.jpg');
-            
-        }
-        h1 {
-            text-align: center;
-            color:black;
-            
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            padding: 20px;
-             background-color: #dfdad9d2 ;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-                  .container.background-image1 {
-        background-image: url('main photo.jpg');
-        background-size: cover;
-        background-position: center;
-        color: black; 
-    }
-          .container.background-image2 {
-        background-image: url('2nd photo.jpg');
-        background-size: cover;
-        background-position: center;
-        color: white; 
-    }
-          .container.background-image3 {
-        background-image: url('');
-        background-size: cover;
-        background-position: center;
-        color: white; 
-    }
-             .container.background-image4 {
-        background-image: url('');
-        background-size: cover;
-        background-position: center;
-        color: black; 
-    }
-              
-
-           
-        img {
-            max-width: 100%;
-            height: auto;
-        }
-        
-        
-    </style>
+  <meta charset="utf-8">
+  <title>Snake Game with High Score</title>
+  <style>
+    body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#111}
+    canvas{background:#000;border:6px solid #222;box-shadow:0 0 20px rgba(0,0,0,.5)}
+    #info{color:#ddd;font-family:sans-serif;margin-top:10px;text-align:center}
+  </style>
 </head>
 <body>
-
-<!-- Video Background -->
-<video autoplay muted loop id="bg-video">
-  <source src="video.mp4" type="video/mp4">
-  Your browser does not support HTML5 video.
-</video>
-
-<!-- Content -->
- <div class="container background-image1">
-     
-    <h1>NORTHERN STAR</h1> 
-
-
- <B>  <ul type="disc">
-
-        <li>  <a href="index.html">
-        <font size="5" color="black" >HOME PAGE</font></a></li>
-
-
-        <li>  <a href="02.html">
-        <font size="5" color="black" >02.</font></a></li>
-
-
-        <li><a href="03.html">
-        <font size="5" color="black" >03.</font></a></li>
-
-
-        <li> <a href="04.html">
-        <font size="5" color="black">04.</font></a></li>
-                  
-        
-        <li><a href="05.html">
-        <font size="5" color="black">05.</font></a></li>    
-       
-       
-        <li><a href="06.html">
-        <font size="5" color="black">06.</font></a></li>
-
-        <li><a href="07.html">
-        <font size="5" color="black">07.</font></a></li>
-   
-     </ul> </B>  
-
-  
-   <font color="black"> <B> 
-    <h2>third page</h2>  </B></font>
-
-    <h2><font color="white"><B><marquee> welcome to northern star</marquee></B></font> </h2>
- 
-</div>
-
-  
-    <h2><font color="white"><B><marquee>
-      
-    </marquee></B></font> </h2>
- 
-
-
-<div class="container background-image2">
- 
- <center>
-  <h2><font color="black"><B><i> power by senura
-  </i></B></font></h2>
-  
-  <h2><B><i></i></B></h2>
-  <h2><B><i></i></B></h2>
- 
-  
-  
-  
-  </center>
-  
+  <div>
+    <canvas id="game" width="400" height="400"></canvas>
+    <div id="info">Use arrow keys (↑ ↓ ←  to move. Press Space to pause.</div>
   </div>
 
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+const grid = 20; // square size
+const cols = canvas.width / grid;
+const rows = canvas.height / grid;
+
+let snake = [{x: 8, y: 8}]; // starting body (head first)
+let dir = {x:1, y:0}; // starting direction (to right)
+let food = spawnFood();
+let speed = 8; // frames per second
+let running = true;
+let score = 0;
+let highScore = localStorage.getItem('snakeHighScore') | 0;
+
+function spawnFood(){
+  while(true){
+    const p = {x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows)};
+    if(!snake.some(s => s.x===p.x && s.y===p.y)) return p;
+  }
+}
+
+function gameLoop(){
+  update();
+  draw();
+}
+
+function update(){
+  if(!running) return;
+
+  const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+
+  // wall wrap-around
+  if(head.x < 0) head.x = cols-1;
+  if(head.x >= cols) head.x = 0;
+  if(head.y < 0) head.y = rows-1;
+  if(head.y >= rows) head.y = 0;
+
+  //collision with self
+  if(snake.some(s => s.x===head.x && s.y===head.y)){
+    resetGame();
+    return;
+  }
+
+  snake.unshift(head);
+
+  if(head.x === food.x && head.y === food.y){
+    score++;
+    if(score > highScore){
+      highScore = score;
+      localStorage.setItem('snakeHighScore', highScore);
+    }
+    food = spawnFood();
+    if(score % 5 === 0) speed += 1;
+  } else {
+    snake.pop();
+  }
+}
+
+function draw(){
+  // background
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ // draw food
+  ctx.fillStyle = '#e74c3c';
+  ctx.fillRect(food.x*grid, food.y*grid, grid, grid);
+
+  // draw snake
+  for(let i=0;i<snake.length;i++){
+    ctx.fillStyle = i===0 ? '#2ecc71' : '#27ae60';
+    ctx.fillRect(snake[i].x*grid, snake[i].y*grid, grid-1, grid-1);
+  }
+
+  // score display
+  ctx.fillStyle = '#ddd';
+  ctx.font = '16px sans-serif';
+  ctx.fillText('Score: ' + score, 8, 18);
+  ctx.fillText('High Score: ' + highScore, 300, 18);
+}
+
+function resetGame(){
+  snake = [{x: 8, y: 8}];
+  dir = {x:1,y:0};
+  food = spawnFood();
+  score = 0;
+  speed = 8;
+  running = false;
+  setTimeout(() => running = true, 500);
+}
+
+// keyboard controls
+window.addEventListener('keydown', e=>{
+  const key = e.key;
+  if(key === 'ArrowUp' && dir.y!==1){ dir = {x:0,y:-1}; }
+  if(key === 'ArrowDown' && dir.y!==-1){ dir = {x:0,y:1}; }
+  if(key === 'ArrowLeft' && dir.x!==1){ dir = {x:-1,y:0}; }
+  if(key === 'ArrowRight' && dir.x!==-1){ dir = {x:1,y:0}; }
+  if(key === ' ') running = !running; // pause with Space
+});
+
+// simpe touch controls for mobile
+let touchStart = null;
+canvas.addEventListener('touchstart', e=>{
+  const t = e.touches[0];
+  touchStart = {x: t.clientX, y: t.clientY};
+});
+canvas.addEventListener('touchend', e=>{
+  if(!touchStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStart.x;
+  const dy = t.clientY - touchStart.y;
+  if(Math.abs(dx) > Math.abs(dy)){
+    if(dx > 0 && dir.x!==-1) dir = {x:1,y:0};
+    if(dx < 0 && dir.x!==1) dir = {x:-1,y:0};
+  } else {
+    if(dy > 0 && dir.y!=-1) dir = {x:0,y:1};
+    if(dy < 0 && dir.y!==1) dir = {x:0,y:-1};
+  }
+  touchStart = null;
+});
+
+setInterval(gameLoop, 1000 / speed);
+</script>
 
 </body>
 </html>
